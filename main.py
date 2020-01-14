@@ -21,8 +21,10 @@ class Env:
         return np.random.choice(self._gauss_mat_rewards[action_id])
 
 class Agent:
-    def __init__(self):
-        self.num_actions = 10
+    def __init__(self, eps, num_actions):
+        self.num_actions = num_actions
+        self.eps = eps
+
         self.num_actions_taken = [0]*self.num_actions
         self.sum_reward_actions = [0]*self.num_actions
         self.reward_total = 0
@@ -43,6 +45,11 @@ class Agent:
     def greedy_action(self):
         return max([(a, self.est_mean_reward(a)) for a in range(self.num_actions)], key=lambda x:x[1])[0]
 
+    def eps_greedy_action(self):
+        if np.random.random_sample() < self.eps:
+            return np.random.choice(self.num_actions)
+        return self.greedy_action()
+
     def average_reward(self):
         return self.reward_total/self.steps_counter
 
@@ -50,13 +57,15 @@ class Agent:
 
 
 env_test = Env()
-agent_test = Agent()
+eps = 0.01
+num_actions = env_test.num_actions
+agent_test = Agent(0.01, num_actions)
 
-number_steps = 1000
+number_steps = 10000
 average_reward = []
 action_sequence = []
 for _ in range(number_steps):
-    action_id = agent_test.greedy_action()
+    action_id = agent_test.eps_greedy_action()
     reward = env_test.reward(action_id)
     agent_test.take_action(action_id, reward)
 
@@ -67,3 +76,6 @@ for _ in range(number_steps):
 
 import matplotlib.pyplot as plt
 plt.plot(range(number_steps), average_reward)
+
+average_reward[-1]
+env_test._mean_reward.max()
