@@ -1,33 +1,41 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
-class Env:
-    def __init__(self, data_set_name = '10_1000_-3_3_1'):
+
+class Environment:
+    def __init__(self, data_set_name='10_1000_-3_3_1'):
+
         actions, points, low_m, high_m, std = data_set_name.split('_')
         self.num_actions = int(actions)
-        self.num_points = int(points)
-        self.low_mu = float(low_m) # lower mean for rewards
-        self.high_mu = float(high_m) # upper mean for rewards
-        self.std = float(std)
+
+        self._num_points = int(points)
+        self._low_mu = float(low_m) # lower mean for rewards
+        self._high_mu = float(high_m) # upper mean for rewards
+        self._std = float(std)
 
         # load data
-        self._gauss_mat_rewards = np.loadtxt(f'data/{data_set_name}/gauss-mat.csv', delimiter=',')
-        self._mean_reward = np.loadtxt(f'data/{data_set_name}/mu-arr.csv', delimiter=',')
+        self._gauss_mat = np.loadtxt(f'data/{data_set_name}/gauss-mat.csv', delimiter=',')
+        self._mu_arr = np.loadtxt(f'data/{data_set_name}/mu-arr.csv', delimiter=',')
 
         self.time_counter = 0
 
     def reward(self, action_id):
         self.time_counter+=1
-        return np.random.choice(self._gauss_mat_rewards[action_id])
+        return np.random.choice(self._gauss_mat[action_id])
 
-class Agent:
-    def __init__(self, epsilon, num_actions):
+class EpsGreedyAgent:
+    def __init__(self, num_actions, epsilon=0.01):
         self.num_actions = num_actions
         self.epsilon = epsilon
 
         self.num_actions_taken = [0]*self.num_actions
         self.sum_reward_actions = [0]*self.num_actions
         self.reward_total = 0
-        self.stepsilon_total = 0
+        self.step_total = 0
+
+        # for analysis
+        self._average_reward = []
+        self._action_sequence = []
 
     def est_mean_reward(self, action_id):
         # converges to mean_reward[action_id] in the limit
@@ -48,33 +56,35 @@ class Agent:
         self.num_actions_taken[action_id]+=1
         self.sum_reward_actions[action_id]+=reward
         self.reward_total += reward
-        self.stepsilon_total+=1
+        self.step_total+=1
 
     def average_reward(self):
-        return self.reward_total/self.stepsilon_total
+        return self.reward_total/self.step_total
+
+    def train(self, env, num_interactions):
+        for _ in range(num_interactions):
+            action_id = agent.epsilon_greedy_action()
+            reward = env.reward(action_id)
+            self.take_action(action_id, reward)
+
+            # for analysis
+            self._action_sequence.append(action_id)
+            self._average_reward.append(self.average_reward())
 
 
 
+if __name__ == '__main__':
+    env = Environment()
 
-env_test = Env()
-num_actions = env_test.num_actions
-epsilon = 0.01
-agent_test = Agent(0.01, num_actions)
+    num_interactions = 20000
+    x = range(num_interactions)
+    for eps in [1, 0.1, 0.01, 0.001, 0]:
+        agent = EpsGreedyAgent(env.num_actions, epsilon=eps)
+        agent.train(env, num_interactions)
+        y = [abs(env._mu_arr.max() - v) for v in agent._average_reward]
+        plt.plot(x, y, label=str(eps))
 
-number_steps = 10000
-average_reward = []
-action_sequence = []
-for _ in range(number_steps):
-    action_id = agent_test.epsilon_greedy_action()
-    reward = env_test.reward(action_id)
-    agent_test.take_action(action_id, reward)
-    # analysis
-    action_sequence.append(action_id)
-    average_reward.append(agent_test.average_reward())
-
-
-# import matplotlib.pyplot as plt
-# plt.plot(range(number_steps), average_reward)
-
-average_reward[-1]
-env_test._mean_reward.max()
+    plt.xlabel('Number of Interactions')
+    plt.ylabel('| E[Reward] - E[Max Possible Reward] |')
+    plt.legend()
+    plt.show()
