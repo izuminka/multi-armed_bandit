@@ -34,10 +34,9 @@ data/num actions _ num points _ low mu _ high mu _ std
        python data_gen.py
 
 ## Running
+Run the script to generate the graph of the best epsilon to pic for your agent.
+
+       python main.py
 
 
-
-<!--
-# Demo
-![test demo](test.gif)
--->
+![Results](results.png)

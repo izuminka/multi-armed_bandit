@@ -78,13 +78,16 @@ if __name__ == '__main__':
 
     num_interactions = 20000
     x = range(num_interactions)
-    for eps in [1, 0.1, 0.01, 0.001, 0]:
+    eps_range = [1, 0.1, 0.01, 0.001, 0]
+    for eps in eps_range:
         agent = EpsGreedyAgent(env.num_actions, epsilon=eps)
         agent.train(env, num_interactions)
         y = [abs(env._mu_arr.max() - v) for v in agent._average_reward]
         plt.plot(x, y, label=str(eps))
 
+    plt.title('Picking the Best ε')
     plt.xlabel('Number of Interactions')
     plt.ylabel('| E[Reward] - E[Max Possible Reward] |')
     plt.legend()
-    plt.show()
+    plt.savefig('results.png')
+    # plt.show()
