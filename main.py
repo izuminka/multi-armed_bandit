@@ -9,13 +9,9 @@ class Environment:
         dataset_name (str): name of the dataset, composed of the params
 
     Attributes:
-        num_actions (int): Num of actions available, (num reward restributions)
-        _num_points (int): Number of points in one reward restribution
-        _low_mu (float): Lower bound for the mean across distributions
-        _high_mu (float): Upper bound for the mean across distributions
-        _std (float): Standard Deviation for all distributions
         _gauss_mat (np.array): matrix where rows are distributions
         _mu_arr (np.array): array of means for the distributions
+        num_actions (int): Num of actions available, (num reward restributions)
         time_counter (type): Action/time counter
     """
 
@@ -25,21 +21,11 @@ class Environment:
         Args:
             dataset_name (str): name of the dataset, composed of the params
         """
-
-        actions, points, low_m, high_m, std = dataset_name.split('_')
-        self.num_actions = int(actions)
-
-        self._num_points = int(points)
-        self._low_mu = float(low_m)  # lower mean for rewards
-        self._high_mu = float(high_m)  # upper mean for rewards
-        self._std = float(std)
-
-        # load data
         self._gauss_mat = np.loadtxt(
             f'data/{dataset_name}/gauss-mat.csv', delimiter=',')
         self._mu_arr = np.loadtxt(
             f'data/{dataset_name}/mu-arr.csv', delimiter=',')
-
+        self.num_actions = self._gauss_mat.shape[0]
         self.time_counter = 0
 
     def reward(self, action_id):
