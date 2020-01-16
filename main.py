@@ -67,8 +67,6 @@ class EpsGreedyAgent:
         actions_sum_reward (list): Tot rewards for each action
         total_rewards (float): Tot reward for all actions
         total_actions (type): Tot num of actions taken
-        _average_reward (list): average reward at each time step
-        _action_sequence (list): sequence of actions at each time step
     """
 
     def __init__(self, num_actions, epsilon=0.01):
@@ -86,15 +84,11 @@ class EpsGreedyAgent:
         self.total_rewards = 0
         self.total_actions = 0
 
-        # for analysis
-        self._average_reward = []
-        self._action_sequence = []
-
     def est_mean_reward(self, action_id):
         """Estimate mean reward for a given action over previous time steps
 
         Args:
-            action_id (type): action taken now
+            action_id (int): action taken now
 
         Returns:
             0: if no previous such action was taken
@@ -125,61 +119,62 @@ class EpsGreedyAgent:
             return np.random.choice(self.num_actions)
         return self.greedy_action()
 
-    def take_action_update(self, env, action_id):
-        """Take action, interact with env, rescive reward, update model
+    def chose_action(self):
+        """Chose an action to act on the env"""
+        return self.epsilon_greedy_action()
+
+    def update(self, action_id, reward):
+        """Update the agent after an interaction with the env
 
         Args:
-            env (type): Description of parameter `env`.
-            action_id (type): Description of parameter `action_id`.
+            action_id (int): action taken
+            reward (float): reward got from env
 
         Returns:
-            type: Description of returned object.
-
+            None
         """
-        # act on env
-        reward = env.reward(action_id)
-        # update agent
         self.actions_count[action_id] += 1
         self.actions_sum_reward[action_id] += reward
         self.total_rewards += reward
         self.total_actions += 1
-        # return env
 
     def average_reward(self):
         """Expected total reward at time t
         """
         return self.total_rewards / self.total_actions
 
-    def train(self, env, num_interactions):
-        """Train the agent in the given env.
 
-        Args:
-            env (class Environment): given env
-            num_interactions (int): num interactions with env
+def agent_env_inter(env, agent, num_inter):
+    """Agent Env interaction/training
 
-        Returns:
-            None
-        """
-        for _ in range(num_interactions):
-            action_id = agent.epsilon_greedy_action()
-            self.take_action_update(env, action_id)
-            # for analysis
-            self._action_sequence.append(action_id)
-            self._average_reward.append(self.average_reward())
+    Args:
+        env (class Environment): given env
+        agent (class Agent): given agent
+        num_inter (int): num interactions with env
+
+    Returns:
+        list: average reward at each time step.
+    """
+    average_reward = []  # for analysis
+    for _ in range(num_inter):
+        action_id = agent.chose_action()
+        reward = env.reward(action_id)
+        agent.update(action_id, reward)
+        average_reward.append(agent.average_reward())
+    return average_reward
 
 
 if __name__ == '__main__':
     env = Environment()
 
-    num_interactions = 20000
-    x = range(num_interactions)
+    num_inter = 20000
+    x = range(num_inter)
     eps_range = [1, 0.1, 0.01, 0.001, 0]
     for eps in eps_range:
         agent = EpsGreedyAgent(env.num_actions, epsilon=eps)
-        agent.train(env, num_interactions)
-        y = [abs(env._mu_arr.max() - v) for v in agent._average_reward]
+        average_reward_ls = agent_env_inter(env, agent, num_inter)
+        y = [abs(env._mu_arr.max() - v) for v in average_reward_ls]
         plt.plot(x, y, label=str(eps))
-
     plt.title('Picking the Best ε')
     plt.xlabel('Number of Interactions')
     plt.ylabel('| E[Reward] - E[Max Possible Reward] |')
