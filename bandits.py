@@ -56,7 +56,7 @@ class EpsGreedyAgent(Agent):
         """
         if np.random.random_sample() < self.epsilon:
             return np.random.choice(self.avail_actions)
-        action_rewards = [(a, self.estimates(a)) for a in range(self.avail_actions)]
+        action_rewards = [(a, self.estimates[a]) for a in range(self.avail_actions)]
         return max(action_rewards, key=lambda x: x[1])[0]
 
 
@@ -70,11 +70,13 @@ class EpsGreedyAgent(Agent):
         Returns:
             None
         """
-        step_size = 1/self.actions_count[action_id]
-        self.estimates[action_id] = self.new_estimate(estimates[action_id], reward, step_size)
         self.total_rewards += reward
         self.actions_count[action_id] += 1
         self.total_actions += 1
+
+        step_size = 1/self.actions_count[action_id]
+        self.estimates[action_id] = self.new_estimate(self.estimates[action_id], reward, step_size)
+
 
 
 # greedy_test = EspGreedyAgent(10,0.01)
